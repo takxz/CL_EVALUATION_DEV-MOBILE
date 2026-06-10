@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import description_meteo from "@/assets/description_meteo.json";
-import { ArrowLeft, MapPin } from "lucide-react-native";
+import { ArrowLeft, MapPin, Star } from "lucide-react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -19,10 +19,30 @@ export default function DetailScreen() {
   const router = useRouter();
   const [detail, setDetail] = useState<any>(null);
   const [cityName, setCityName] = useState<string>("");
+  const [isFavorite, setIsFavorite] = useState(false);
 
   function parseId(id: string) {
     const [latStr, lonStr] = id.split("_");
     return { latitude: latStr, longitude: lonStr };
+  }
+
+  useEffect(() => {
+    async function checkIfFavorite() {
+        const storedFavorites = await AsyncStorage.getItem('favorites');
+        const favorites: string[] = storedFavorites ? JSON.parse(storedFavorites) : [];
+        setIsFavorite(favorites.includes(id));
+    }
+    checkIfFavorite();
+  }, [id]);
+
+  async function addOrRemoveFavorite() {
+    const storedFavorites = await AsyncStorage.getItem('favorites');
+    const favorites: string[] = storedFavorites ? JSON.parse(storedFavorites) : [];
+
+    const updated = favorites.includes(id) ? favorites.filter(fav => fav !== id) : [...favorites, id];
+
+    await AsyncStorage.setItem('favorites', JSON.stringify(updated));
+    setIsFavorite(!isFavorite);
   }
 
   useEffect(() => {
@@ -189,8 +209,15 @@ export default function DetailScreen() {
             </View>
           )}
 
-          <Pressable style={styles.favButton}>
-            <Text style={styles.favButtonText}>Ajouter aux favoris</Text>
+          <Pressable style={styles.favButton} onPress={addOrRemoveFavorite}>
+            <Star
+              size={20}
+              color={isFavorite ? "#FFD700" : "#8BA8C8"}
+              fill={isFavorite ? "#FFD700" : "transparent"}
+            />
+            <Text style={isFavorite ? styles.favButtonText : styles.notFavButtonText}>
+              {isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -349,13 +376,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A4B8C",
     borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     borderWidth: 1,
     borderColor: "#1E3F6E",
   },
   favButtonText: {
-    color: "#C5D8F0",
+    color: "#FFD700",
     fontSize: 15,
     fontWeight: "600",
   },
+    notFavButtonText: {
+    color: "#8BA8C8",
+    fontSize: 15,
+    fontWeight: "600",
+    }
 });
