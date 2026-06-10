@@ -89,17 +89,24 @@ export default function HomeScreen() {
   const transformedCityInput = cityInput.trim().toLowerCase();
 
   async function handleCitySearch() {
-    if (!transformedCityInput) return;
+    if (!transformedCityInput) {
+      return alert("Veuillez entrer le nom d'une ville.");
+    }
 
     try {
       const response = await fetch(
         `https://geocoding-api.open-meteo.com/v1/search?name=${transformedCityInput}&count=1&language=fr`,
       );
+
       const data = await response.json();
       if (data.results && data.results.length > 0) {
         const coordinates = data.results[0];
         const id = `${coordinates.latitude.toFixed(4)}_${coordinates.longitude.toFixed(4)}`;
         router.push(`/detail/${id}`);
+        setCityInput("");
+      } else {
+        alert("Ville non trouvée.");
+        setCityInput("");
       }
     } catch (error) {
       console.error("Error fetching city data:", error);
