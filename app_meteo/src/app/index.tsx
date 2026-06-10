@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import description_meteo from "@/assets/description_meteo.json";
+import { MapPin } from "lucide-react-native";
 
 export default function HomeScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(
@@ -66,86 +68,189 @@ export default function HomeScreen() {
     );
   }
 
+  const weatherInfo = weather.current
+    ? getWeatherDescriptionAndIcon(weather.current.weather_code)
+    : null;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Bienvenue sur l'App Météo!</Text>
-        <Text style={styles.subtitle}>
-          Obtenez les dernières mises à jour météorologiques pour votre
-          localisation.
-        </Text>
-      </View>
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Entrez le nom de la ville"
-          value={cityInput}
-          onChangeText={setCityInput}
-        />
-      </View>
-      <View style={styles.currentWeatherContainer}>
-      {cityName ? (
-        <Text style={styles.subtitle}>{cityName}</Text>
-      ) : (
-        <Text style={styles.subtitle}>Récupération de votre position...</Text>
-      )}
-        {weather.current ? (
-          <View style={styles.currentWeatherDetails}>
-            <Text style={styles.subtitle}>
-              {weather.current.temperature_2m}°C
-            </Text>
-            <Text style={styles.subtitle}>
-              {weather.current.wind_speed_10m} km/h
-            </Text>
-            <Text style={styles.subtitle}>
-              {weather.current.apparent_temperature}°C
-            </Text>
-            <Text style={styles.subtitle}>
-              {weather.daily.temperature_2m_max[0]}°C
-            </Text>
-            <Text style={styles.subtitle}>
-              {weather.daily.temperature_2m_min[0]}°C
-            </Text>
-            <Text style={styles.subtitle}>
-              {
-                getWeatherDescriptionAndIcon(weather.current.weather_code)
-                  .description
-              }
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>Météo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Rechercher une ville..."
+            placeholderTextColor="#8BA8C8"
+            value={cityInput}
+            onChangeText={setCityInput}
+          />
+        </View>
+
+        <View style={styles.weatherCard}>
+          <View style={styles.cityRow}>
+            <MapPin size={13} color="#8BA8C8" />
+            <Text style={styles.cityText}>
+              {cityName || "Récupération de la position..."}
             </Text>
           </View>
-        ) : (
-          <Text style={styles.subtitle}>Chargement...</Text>
-        )}
-      </View>
-      <View style={styles.favoritesContainer}>
 
+          <View style={styles.heroSection}>
+            {weatherInfo?.image ? (
+              <Image
+                source={{ uri: weatherInfo.image }}
+                style={styles.weatherImage}
+              />
+            ) : null}
+            <Text style={styles.temperature}>
+              {weather.current ? `${weather.current.temperature_2m?.toFixed(0)}°` : "°"}
+            </Text>
+            <Text style={styles.weatherDescription}>
+              {weatherInfo?.description ?? "Chargement..."}
+            </Text>
+          </View>
+
+          {weather.current && (
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Ressenti</Text>
+                <Text style={styles.statValue}>
+                  {weather.current?.apparent_temperature?.toFixed(0)}°
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Vent</Text>
+                <Text style={styles.statValue}>
+                  {weather.current?.wind_speed_10m?.toFixed(0)} km/h
+                </Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Min / Max</Text>
+                <Text style={styles.statValue}>
+                  {weather.daily?.temperature_2m_min[0]?.toFixed(0)}° /{" "}
+                  {weather.daily?.temperature_2m_max[0]?.toFixed(0)}°
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.favoritesContainer}>
+          <Text style={styles.sectionTitle}>Villes favorites</Text>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#0B1E3D",
+  },
   container: {
     flex: 1,
-    justifyContent: "center",
+    backgroundColor: "#0B1E3D",
+    paddingHorizontal: 20,
+  },
+  header: {
+    marginTop: 24,
+    marginBottom: 20,
+    gap: 14,
+  },
+  appTitle: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: "#132C52",
+    color: "#fff",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: "#1E3F6E",
+  },
+  weatherCard: {
+    backgroundColor: "#1A4B8C",
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  cityRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-  },
-  inputContainer: {
+    gap: 5,
     marginBottom: 20,
   },
-  currentWeatherContainer: {
-    marginTop: 20,
+  cityText: {
+    fontSize: 14,
+    color: "#8BA8C8",
   },
-  currentWeatherDetails: {
+  heroSection: {
     alignItems: "center",
+    marginBottom: 28,
+    gap: 4,
+  },
+  weatherImage: {
+    width: 72,
+    height: 72,
+    marginBottom: 4,
+  },
+  temperature: {
+    fontSize: 72,
+    fontWeight: "200",
+    color: "#fff",
+    lineHeight: 80,
+  },
+  weatherDescription: {
+    fontSize: 18,
+    color: "#C5D8F0",
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  statsRow: {
+    flexDirection: "row",
+    backgroundColor: "#132C52",
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: "#1E3F6E",
+    marginVertical: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: "#8BA8C8",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  favoritesContainer: {
+    marginTop: 28,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#fff",
   },
 });
