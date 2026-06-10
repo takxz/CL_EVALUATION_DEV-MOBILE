@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,7 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import description_meteo from "@/assets/description_meteo.json";
 import { MapPin, Search } from "lucide-react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import Favorite from "@/components/Favorite/Favorite";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -21,6 +25,7 @@ export default function HomeScreen() {
   const [weather, setWeather] = useState<any>([]);
   const [cityName, setCityName] = useState<string>("");
   const [cityInput, setCityInput] = useState<string>("");
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
     async function getLocation() {
@@ -101,9 +106,30 @@ export default function HomeScreen() {
     }
   }
 
+  const getFavoriteCities = async () => {
+    try {
+      const storedFavorites = await AsyncStorage.getItem('favorites');
+      if (storedFavorites) {
+        setFavorites(JSON.parse(storedFavorites));
+      }
+    } catch (error) {
+      console.error("Error fetching favorite cities:", error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      getFavoriteCities();
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.appTitle}>Météo</Text>
           <TextInput
@@ -171,9 +197,14 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.favoritesContainer}>
-          <Text style={styles.sectionTitle}>Villes favorites</Text>
+          <Text style={styles.sectionTitle}>VILLES FAVORITES</Text>
+          <View style={styles.favoritesGrid}>
+            {favorites.map((city) => (
+              <Favorite key={city} coords={city} />
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -183,10 +214,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0B1E3D",
   },
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  container: {
     backgroundColor: "#0B1E3D",
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   header: {
     marginTop: 24,
@@ -290,8 +324,16 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4A9EFF",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    marginBottom: 12,
+  },
+  favoritesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
   },
 });
