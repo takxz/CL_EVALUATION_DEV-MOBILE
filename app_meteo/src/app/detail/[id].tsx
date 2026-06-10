@@ -91,7 +91,10 @@ export default function DetailScreen() {
 
   function formatTime(isoString: string) {
     if (!isoString) return "--:--";
-    return isoString.split("T")[1]?.slice(0, 5) ?? "--:--";
+    // Append 'Z' to force UTC interpretation, then format in the device's local timezone
+    const date = new Date(isoString + "Z");
+    if (isNaN(date.getTime())) return "--:--";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
   const weatherInfo = detail?.current
