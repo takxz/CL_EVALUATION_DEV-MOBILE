@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import description_meteo from "@/assets/description_meteo.json";
-import { MapPin } from "lucide-react-native";
+import { MapPin, Search } from "lucide-react-native";
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null,
   );
@@ -72,6 +81,26 @@ export default function HomeScreen() {
     ? getWeatherDescriptionAndIcon(weather.current.weather_code)
     : null;
 
+  const transformedCityInput = cityInput.trim().toLowerCase();
+
+  async function handleCitySearch() {
+    if (!transformedCityInput) return;
+
+    try {
+      const response = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${transformedCityInput}&count=1&language=fr`,
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const coordinates = data.results[0];
+        const id = `${coordinates.latitude.toFixed(4)}_${coordinates.longitude.toFixed(4)}`;
+        router.push(`/detail/${id}`);
+      }
+    } catch (error) {
+      console.error("Error fetching city data:", error);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -84,6 +113,9 @@ export default function HomeScreen() {
             value={cityInput}
             onChangeText={setCityInput}
           />
+          <Pressable style={styles.searchButton} onPress={handleCitySearch}>
+            <Search color="#8BA8C8" />
+          </Pressable>
         </View>
 
         <View style={styles.weatherCard}>
@@ -102,7 +134,9 @@ export default function HomeScreen() {
               />
             ) : null}
             <Text style={styles.temperature}>
-              {weather.current ? `${weather.current.temperature_2m?.toFixed(0)}°` : "°"}
+              {weather.current
+                ? `${weather.current.temperature_2m?.toFixed(0)}°`
+                : "°"}
             </Text>
             <Text style={styles.weatherDescription}>
               {weatherInfo?.description ?? "Chargement..."}
@@ -174,6 +208,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     borderWidth: 1,
     borderColor: "#1E3F6E",
+  },
+  searchButton: {
+    position: "absolute",
+    right: 30,
+    top: 12,
+    padding: 8,
+    color: "#8BA8C8",
   },
   weatherCard: {
     backgroundColor: "#1A4B8C",

@@ -10,6 +10,7 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }} >
         <Stack.Screen name="index" />
+        <Stack.Screen name="detail/[id]" />
       </Stack>
     </ThemeProvider>
   );
